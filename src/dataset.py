@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torch.utils.data import Dataset
 from collections import Counter
 
@@ -77,3 +78,31 @@ class FlickrDataset(Dataset):
 
         return image, torch.tensor(tokenized_caption)
 
+def build_glove_matrix(vocab,glove_path, embedding_dim= 100):
+    embedding_index = {}
+    with open (glove_path,'r', encoding='utf-8') as f:
+        for line in f:
+            values = line.split()
+            word = values[0]
+            coefs = np.asarray(values[1:],dtype='float32')
+            embedding_index[word] = coefs
+
+    vocab_size = len(vocab)
+    weight_matrix = np.random.normal(scale=0.6, size=(vocab_size, embedding_dim))
+
+    weight_matrix[vocab.stoi["<PAD>"]] = np.zeros((embedding_dim,))
+
+    words_found = 0
+    words_not_found = []
+    
+    for i in range(vocab_size):
+        word = vocab.itos[i]
+        if word in embedding_index:
+            weight_matrix[i] = embedding_index[word]
+            words_found += 1
+        else:
+            words_not_found.append(word)
+    
+    print(f"Sucesso: {words_found}/{vocab_size} palavras encontradas no Glove")
+
+    return torch.from_numpy(weight_matrix).float(), words_not_found
