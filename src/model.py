@@ -36,12 +36,12 @@ class ScratchGRU(nn.Module):
 
     super().__init__()
 
-    self.end_idx = end_idx.stoi["<EOS>"]
+    self.end_idx = vocab.stoi["<EOS>"]
     self.pad_idx = vocab.stoi["<PAD>"]
     self.vocab_size = len(vocab)
     self.embed_size = embed_size
 
-    self.embedding = nn.Embedding(vocab_size, self.embed_size, padding_idx=pad_idx)
+    self.embedding = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=self.pad_idx)
 
     self.gru = nn.GRU(
         input_size=embed_size,
@@ -52,7 +52,7 @@ class ScratchGRU(nn.Module):
         bidirectional=False 
     )
 
-    self.classifier = nn.Linear(hidden_size, vocab_size)
+    self.classifier = nn.Linear(hidden_size, self.vocab_size)
 
     self.dropout = nn.Dropout(dropout_rate)
 

@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-import tqdm
+from tqdm import tqdm
 
 # TODO: salvar modelos em /checkpoints
 
@@ -53,11 +53,19 @@ class ImageCaptionTrainer:
         for images, captions, captions_lengths in pbar:
             images = images.to(self.device)
             captions = captions.to(self.device)
-            
+
+            # Flattening for CrossEntropyLoss:
+            # We want to treat every word in every sequence as an individual sample.
             self.optimizer.zero_grad()
+
+            # Logits shape: [Batch, Seq_Len + 1, Vocab]
             logits = self.model(images, captions, captions_lengths)
+
+            logits_flattened = logits[:, :-1, :].contiguous().view(-1, logits.size(-1))
+            captions_flattened = captions.contiguous().view(-1)
+
+            loss = self.loss_function(logits_flattened, captions_flattened)
             
-            loss = self.loss_function(logits, captions)
             loss.backward()
             self.optimizer.step()
             
