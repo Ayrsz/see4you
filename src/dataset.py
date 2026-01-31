@@ -2,7 +2,6 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 from collections import Counter
-from functools import partial
 
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
@@ -47,7 +46,7 @@ class Vocabulary:
 
 
 class FlickrDataset(Dataset):
-    def __init__(self, root_dir, df, vocab, transform=None, max_tokens=50, is_eval=False):
+    def __init__(self, root_dir, df, vocab, transform=None, max_tokens=100, is_eval=False):
         self.root_dir = root_dir
         self.df = df
         self.vocab = vocab
@@ -71,6 +70,7 @@ class FlickrDataset(Dataset):
             return image, captions
 
         caption = self.df.iloc[index]['caption_clean']
+
         tokens = self.vocab.tokenize(caption)
 
         tokenized_caption = [self.vocab.stoi["<SOS>"]] + tokens + [self.vocab.stoi["<EOS>"]]
@@ -100,9 +100,9 @@ def preprocess_data(train_dataset: FlickrDataset, val_dataset: FlickrDataset, te
 
     return train_loader, val_loader, test_loader
     
-def build_glove_matrix(vocab,glove_path, embedding_dim= 100):
+def build_weights_matrix(vocab, pretrained_embeddings_path, embedding_dim=300):
     embedding_index = {}
-    with open (glove_path,'r', encoding='utf-8') as f:
+    with open (pretrained_embeddings_path,'r', encoding='utf-8') as f:
         for line in f:
             values = line.split()
             word = values[0]
@@ -125,6 +125,6 @@ def build_glove_matrix(vocab,glove_path, embedding_dim= 100):
         else:
             words_not_found.append(word)
     
-    print(f"Sucesso: {words_found}/{vocab_size} palavras encontradas no Glove")
+    print(f"Sucesso: {words_found}/{vocab_size} palavras encontradas nos embeddings pré-treinados")
 
     return torch.from_numpy(weight_matrix).float(), words_not_found
